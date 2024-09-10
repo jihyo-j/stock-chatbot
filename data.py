@@ -7,5 +7,6 @@ code_df = pd.read_html('http://kind.krx.co.kr/corpgeneral/corpList.do?method=dow
 
 # 종목코드가 6자리 설정
 code_df.종목코드 = code_df.종목코드.map('{:06d}'.format)
+code_df = code_df[['회사명', '종목코드']]
 
 print(code_df)
