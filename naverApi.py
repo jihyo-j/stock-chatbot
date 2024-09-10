@@ -1,12 +1,11 @@
 import requests
 import json
-import re  # 정규 표현식을 위한 모듈
+import re 
 from urllib.parse import urlencode
 from datetime import datetime
 import os
 from dotenv import load_dotenv
 
-# .env 파일의 변수 로드
 load_dotenv()
 
 def clean_text(text):
@@ -48,7 +47,6 @@ def search_naver(query=None, chunk=100, chunk_no=1, sort="date",
     if response.status_code != 200:
         raise Exception(f"API 호출 실패: {response.status_code}")
 
-    # JSON 응답을 파싱
     data = response.json()
     total_count = int(data['total'])
 
@@ -59,7 +57,6 @@ def search_naver(query=None, chunk=100, chunk_no=1, sort="date",
     def parse_items(items):
         result = []
         for item in items:
-            # 제목과 설명을 클린업하여 처리
             title = clean_text(item.get("title", ""))
             description = clean_text(item.get("description", ""))
             pub_date = datetime.strptime(item.get("pubDate", ""), "%a, %d %b %Y %H:%M:%S %z")
