@@ -1,10 +1,11 @@
 import requests
-import xml.etree.ElementTree as ET
+import json
 from urllib.parse import urlencode
 from datetime import datetime
 import os
 from dotenv import load_dotenv
 
+# .env 파일의 변수 로드
 load_dotenv()
 
 def search_naver(query=None, chunk=100, chunk_no=1, sort="date", 
@@ -13,6 +14,7 @@ def search_naver(query=None, chunk=100, chunk_no=1, sort="date",
                  client_secret=None, 
                  verbose=True):
 
+    # .env에서 CLIENT_ID와 CLIENT_SECRET 값을 가져옴
     client_id = client_id or os.getenv("CLIENT_ID")
     client_secret = client_secret or os.getenv("CLIENT_SECRET")
     
@@ -25,7 +27,7 @@ def search_naver(query=None, chunk=100, chunk_no=1, sort="date",
     if chunk_no < 1 or chunk_no > 1000:
         raise ValueError("chunk_no 요청 변수값이 허용 범위(1~1000)인지 확인해 보세요.")
 
-    search_url = "https://openapi.naver.com/v1/search/news.xml"
+    search_url = "https://openapi.naver.com/v1/search/news.json"
     query_encoded = urlencode({'query': query})
 
     headers = {
@@ -39,9 +41,10 @@ def search_naver(query=None, chunk=100, chunk_no=1, sort="date",
     if response.status_code != 200:
         raise Exception(f"API 호출 실패: {response.status_code}")
 
-    root = ET.fromstring(response.content)
+    # JSON 응답을 파싱
+    data = response.json()
+    total_count = int(data['total'])
 
-    total_count = int(root.find('channel/total').text)
     if verbose:
         print(f"* 검색된 총 기사 건수는 {total_count}건입니다.")
         print(f"  - ({chunk}/{min(total_count, max_record)})건 호출을 진행합니다.\n")
@@ -49,9 +52,9 @@ def search_naver(query=None, chunk=100, chunk_no=1, sort="date",
     def parse_items(items):
         result = []
         for item in items:
-            title = item.findtext("title").replace("&quot;", "").replace("<b>", "").replace("</b>", "")
-            description = item.findtext("description").replace("&quot;", "").replace("<b>", "").replace("</b>", "")
-            pub_date = datetime.strptime(item.findtext("pubDate"), "%a, %d %b %Y %H:%M:%S %z")
+            title = item.get("title", "").replace("&quot;", "").replace("<b>", "").replace("</b>", "")
+            description = item.get("description", "").replace("&quot;", "").replace("<b>", "").replace("</b>", "")
+            pub_date = datetime.strptime(item.get("pubDate", ""), "%a, %d %b %Y %H:%M:%S %z")
             result.append({
                 "title": title,
                 "description": description,
@@ -59,7 +62,7 @@ def search_naver(query=None, chunk=100, chunk_no=1, sort="date",
             })
         return result
 
-    items = root.findall(".//item")
+    items = data['items']
     search_list = parse_items(items)
     
     if not do_done or len(search_list) >= total_count or len(search_list) >= max_record:
@@ -74,8 +77,8 @@ def search_naver(query=None, chunk=100, chunk_no=1, sort="date",
 
             url = f"{search_url}?{query_encoded}&display={chunk}&start={i}&sort={sort}"
             response = requests.get(url, headers=headers)
-            root = ET.fromstring(response.content)
-            items = root.findall(".//item")
+            data = response.json()
+            items = data['items']
             additional_list = parse_items(items)
             results.extend(additional_list)
             
