@@ -1,5 +1,6 @@
 import requests
 import json
+import re  # 정규 표현식을 위한 모듈
 from urllib.parse import urlencode
 from datetime import datetime
 import os
@@ -7,6 +8,18 @@ from dotenv import load_dotenv
 
 # .env 파일의 변수 로드
 load_dotenv()
+
+def clean_text(text):
+    """텍스트에서 불필요한 공백, 특수 문자, HTML 태그 등을 제거하는 함수"""
+    # HTML 태그 제거
+    text = re.sub(r"<.*?>", "", text)
+    # 특수 문자 제거 (&quot; 같은 HTML 엔티티도 포함)
+    text = re.sub(r"&[a-z]+;", "", text)
+    # 콤마, 구두점 등을 제거하고 공백을 하나로 통일
+    text = re.sub(r"[^\w\s]", "", text)
+    # 여러 공백을 하나로 줄이기
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
 
 def search_naver(query=None, chunk=100, chunk_no=1, sort="date", 
                  do_done=False, max_record=1000, 
@@ -52,8 +65,9 @@ def search_naver(query=None, chunk=100, chunk_no=1, sort="date",
     def parse_items(items):
         result = []
         for item in items:
-            title = item.get("title", "").replace("&quot;", "").replace("<b>", "").replace("</b>", "")
-            description = item.get("description", "").replace("&quot;", "").replace("<b>", "").replace("</b>", "")
+            # 제목과 설명을 클린업하여 처리
+            title = clean_text(item.get("title", ""))
+            description = clean_text(item.get("description", ""))
             pub_date = datetime.strptime(item.get("pubDate", ""), "%a, %d %b %Y %H:%M:%S %z")
 
             # 필터링 키워드 리스트
@@ -114,6 +128,7 @@ if search_list_large:
     print(f"발행일: {first_article['publish_date']}")
 else:
     print("검색 결과가 없습니다.")
+
 
 
 # print(f"첫 번째 검색 결과: {len(search_list)}개")
