@@ -55,11 +55,17 @@ def search_naver(query=None, chunk=100, chunk_no=1, sort="date",
             title = item.get("title", "").replace("&quot;", "").replace("<b>", "").replace("</b>", "")
             description = item.get("description", "").replace("&quot;", "").replace("<b>", "").replace("</b>", "")
             pub_date = datetime.strptime(item.get("pubDate", ""), "%a, %d %b %Y %H:%M:%S %z")
-            result.append({
-                "title": title,
-                "description": description,
-                "publish_date": pub_date
-            })
+
+            # 필터링 키워드 리스트
+            keywords = ["주식", "증권", "시장", "거래", "투자"]
+
+            # 제목이나 설명에 특정 키워드가 포함된 경우에만 추가
+            if any(keyword in title for keyword in keywords) or any(keyword in description for keyword in keywords):
+                result.append({
+                    "title": title,
+                    "description": description,
+                    "publish_date": pub_date
+                })
         return result
 
     items = data['items']
@@ -100,7 +106,6 @@ search_list_large = search_naver(
 )
 
 # 결과 출력
-
 if search_list_large:
     first_article = search_list_large[0]  # 첫 번째 기사
     print("첫 번째 기사 내용:")
@@ -109,6 +114,7 @@ if search_list_large:
     print(f"발행일: {first_article['publish_date']}")
 else:
     print("검색 결과가 없습니다.")
+
 
 # print(f"첫 번째 검색 결과: {len(search_list)}개")
 # print(f"3000건 검색 결과: {len(search_list_large)}개")
