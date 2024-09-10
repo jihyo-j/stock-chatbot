@@ -10,14 +10,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def clean_text(text):
-    """텍스트에서 불필요한 공백, 특수 문자, HTML 태그 등을 제거하는 함수"""
-    # HTML 태그 제거
     text = re.sub(r"<.*?>", "", text)
-    # 특수 문자 제거 (&quot; 같은 HTML 엔티티도 포함)
     text = re.sub(r"&[a-z]+;", "", text)
-    # 콤마, 구두점 등을 제거하고 공백을 하나로 통일
     text = re.sub(r"[^\w\s]", "", text)
-    # 여러 공백을 하나로 줄이기
     text = re.sub(r"\s+", " ", text).strip()
     return text
 
@@ -27,7 +22,6 @@ def search_naver(query=None, chunk=100, chunk_no=1, sort="date",
                  client_secret=None, 
                  verbose=True):
 
-    # .env에서 CLIENT_ID와 CLIENT_SECRET 값을 가져옴
     client_id = client_id or os.getenv("CLIENT_ID")
     client_secret = client_secret or os.getenv("CLIENT_SECRET")
     
